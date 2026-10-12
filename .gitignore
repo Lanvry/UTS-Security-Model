@@ -1,0 +1,19 @@
+# Dependensi Node
+node_modules/
+server-a/node_modules/
+server-b/node_modules/
+
+# Konfigurasi Lingkungan (Secret Keys)
+.env
+.env.local
+.env.*.local
+
+# Sistem Operasi
+.DS_Store
+Thumbs.db
+
+# File Log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

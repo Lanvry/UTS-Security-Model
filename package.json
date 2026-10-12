@@ -1,0 +1,16 @@
+{
+  "name": "uts_workshop",
+  "version": "1.0.0",
+  "description": "Multi-Server Encrypted Architecture with Express.js, MySQL, and JWT",
+  "main": "index.js",
+  "scripts": {
+    "start:a": "node server-a/bin/www",
+    "start:b": "node server-b/bin/www"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.7"
+  }
+}

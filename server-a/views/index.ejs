@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        :root {
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --primary: #1d4ed8;
+            --primary-hover: #1e40af;
+            --sync-btn: #b91c1c;
+            --sync-hover: #991b1b;
+            --success-bg: #dcfce7;
+            --success-text: #14532d;
+            --error-bg: #fee2e2;
+            --error-text: #7f1d1d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            padding: 24px 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1040px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: #1e293b;
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid #fecaca;
+        }
+
+        .sync-banner {
+            background-color: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .sync-info h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #881337;
+        }
+
+        .sync-info p {
+            font-size: 13px;
+            color: #9f1239;
+            margin-top: 2px;
+        }
+
+        .btn-sync {
+            background-color: var(--sync-btn);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-sync:hover { background-color: var(--sync-hover); }
+        .btn-sync:focus-visible { outline: 3px solid #f87171; outline-offset: 2px; }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-main);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 2fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--text-main);
+            background-color: #ffffff;
+            min-height: 44px;
+        }
+
+        input:focus-visible, select:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 1px;
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 44px;
+        }
+
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-primary:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .img-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-top">
+                <h1 class="title"><span class="badge">Server A : Port 3000</span> Pengelolaan Sumber Data (DB A)</h1>
+                <span style="font-size: 13px; color: var(--text-muted);">Database: MySQL (db_a)</span>
+            </div>
+            <p class="subtitle">Data produk dan kategori pada server ini tersimpan dalam bentuk asli (Plaintext).</p>
+        </header>
+
+        <% if (message) { %>
+            <div class="alert alert-success" role="alert"><%= message %></div>
+        <% } %>
+        <% if (error) { %>
+            <div class="alert alert-error" role="alert"><%= error %></div>
+        <% } %>
+
+        <!-- Bagian Langkah 1: Tombol Enkripsi dan Kirim ke Server B -->
+        <section class="sync-banner">
+            <div class="sync-info">
+                <h3>Langkah 1: Sinkronisasi Terenkripsi (POST ke Server B)</h3>
+                <p>Membaca data DB A, mengenkripsi field menggunakan AES-256-CBC, lalu mengirim payload ke Server B (<code>http://ubuntu.leopard-gila.ts.net:3002</code>).</p>
+            </div>
+            <form action="/api/sync" method="POST">
+                <button type="submit" class="btn-sync" id="btn-sync-submit">
+                    Kirim Data Terenkripsi ke Server B
+                </button>
+            </form>
+        </section>
+
+        <!-- Form Tambah Produk -->
+        <section class="card">
+            <h2 class="card-title">Tambah Produk ke DB A</h2>
+            <form action="/api/produk" method="POST" class="form-grid">
+                <div class="form-group">
+                    <label for="nama_produk">Nama Produk</label>
+                    <input type="text" id="nama_produk" name="nama_produk" placeholder="Contoh: Monitor LG 24 inch" required>
+                </div>
+                <div class="form-group">
+                    <label for="harga_produk">Harga (Rp)</label>
+                    <input type="number" id="harga_produk" name="harga_produk" placeholder="1850000" required min="1">
+                </div>
+                <div class="form-group">
+                    <label for="foto_produk">URL Foto</label>
+                    <input type="url" id="foto_produk" name="foto_produk" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=300">
+                </div>
+                <div class="form-group">
+                    <label for="id_kategori">Kategori</label>
+                    <select id="id_kategori" name="id_kategori" required>
+                        <% if (kategori.length === 0) { %>
+                            <option value="">(Belum ada kategori)</option>
+                        <% } else { %>
+                            <% kategori.forEach(k => { %>
+                                <option value="<%= k.id %>"><%= k.nama_kategori %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" id="btn-add-product">Simpan</button>
+            </form>
+        </section>
+
+        <!-- Tabel Data DB A -->
+        <section class="card">
+            <h2 class="card-title">Daftar Data Saat Ini di DB A (<%= produk.length %> Item)</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Foto</th>
+                            <th scope="col">Nama Produk</th>
+                            <th scope="col">Kategori</th>
+                            <th scope="col">Harga Asli</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (produk.length === 0) { %>
+                            <tr>
+                                <td colspan="5" class="empty-state">Belum ada data produk di DB A. Silakan tambahkan melalui form di atas.</td>
+                            </tr>
+                        <% } else { %>
+                            <% produk.forEach(p => { %>
+                                <tr>
+                                    <td><%= p.id %></td>
+                                    <td>
+                                        <img src="<%= p.foto_produk %>" alt="<%= p.nama_produk %>" class="img-thumb" onerror="this.src='https://placehold.co/48x48?text=Produk'">
+                                    </td>
+                                    <td><strong><%= p.nama_produk %></strong></td>
+                                    <td><%= p.nama_kategori || '(ID: ' + p.id_kategori + ')' %></td>
+                                    <td>Rp <%= Number(p.harga_produk).toLocaleString('id-ID') %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

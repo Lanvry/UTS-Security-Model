@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --cipher-text: #f87171;
+            --accent-green: #22c55e;
+            --accent-blue: #38bdf8;
+            --btn-primary: #0284c7;
+            --btn-hover: #0369a1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            padding: 24px 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1040px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .badge-server {
+            background-color: #0369a1;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .badge-status {
+            background-color: #7f1d1d;
+            color: #fecaca;
+            border: 1px solid #dc2626;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0b1329;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .cipher-block {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            color: var(--cipher-text);
+            font-size: 12px;
+            word-break: break-all;
+            max-width: 260px;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .btn-test {
+            background-color: var(--btn-primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-test:hover { background-color: var(--btn-hover); }
+        .btn-test:focus-visible { outline: 3px solid var(--accent-blue); outline-offset: 2px; }
+
+        .console-output {
+            background-color: #020617;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: var(--accent-green);
+            overflow-x: auto;
+            min-height: 80px;
+            white-space: pre-wrap;
+        }
+
+        .grid-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .product-card {
+            background-color: #0b1329;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .product-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .product-meta h4 {
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .product-meta .category {
+            font-size: 12px;
+            color: var(--accent-blue);
+        }
+
+        .product-meta .price {
+            font-size: 13px;
+            color: var(--accent-green);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-top">
+                <h1 class="title"><span class="badge-server">Server B : Port 3001</span> Penerima & EndPoint Terproteksi</h1>
+                <span class="badge-status">Status DB B: Encrypted at Rest</span>
+            </div>
+            <p class="subtitle">Menerima payload terenkripsi dari Server A, menyimpan ciphertext ke DB B, dan mendekripsi via API JWT.</p>
+        </header>
+
+        <!-- Bagian Langkah 2 & 3: Monitoring DB B Terenkripsi -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">Langkah 2 & 3: Data Tersimpan di DB B (Ciphertext)</h2>
+                <span style="font-size: 12px; color: var(--text-muted);">Database: MySQL (db_b)</span>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                Tabel di bawah ini dibaca langsung dari <code>db_b</code>. Seluruh nilai teks tersimpan dalam keadaan terenkripsi:
+            </p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Ciphertext Nama Produk</th>
+                            <th scope="col">Ciphertext Harga</th>
+                            <th scope="col">Ciphertext Foto</th>
+                            <th scope="col">ID Kategori</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (produk.length === 0) { %>
+                            <tr>
+                                <td colspan="5" class="empty-state">
+                                    DB B belum memiliki data. Silakan tekan tombol sinkronisasi di Server A (Port 3000).
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% produk.forEach(p => { %>
+                                <tr>
+                                    <td><%= p.id %></td>
+                                    <td><span class="cipher-block"><%= p.nama_produk %></span></td>
+                                    <td><span class="cipher-block"><%= p.harga_produk %></span></td>
+                                    <td><span class="cipher-block"><%= p.foto_produk %></span></td>
+                                    <td><%= p.id_kategori %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Bagian Langkah 4: Simulasi Client EndPoint dengan JWT -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">Langkah 4: Simulasi Client EndPoint (Decrypted via JWT)</h2>
+                <span style="font-size: 12px; color: var(--accent-green);">Route: GET /api/endpoint/produk</span>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                Simulasi client (mobile/web) melakukan autentikasi ke <code>POST /api/auth/login</code> untuk mendapatkan token JWT, lalu memanggil endpoint terproteksi untuk mengambil data terdekripsi.
+            </p>
+            <button type="button" class="btn-test" id="btn-run-endpoint" onclick="runClientSimulation()">
+                Eksekusi Login JWT & Panggil API EndPoint
+            </button>
+
+            <div id="output-area" class="console-output">Menunggu instruksi pengujian... Klik tombol di atas untuk memulai.</div>
+
+            <div id="preview-container" style="display: none; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">Pratinjau Data Produk yang Berhasil Didekripsi:</h3>
+                <div id="product-cards" class="grid-preview"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        async function runClientSimulation() {
+            const out = document.getElementById('output-area');
+            const previewContainer = document.getElementById('preview-container');
+            const productCards = document.getElementById('product-cards');
+
+            out.textContent = '[1/2] Melakukan autentikasi client ke POST /api/auth/login...';
+            previewContainer.style.display = 'none';
+            productCards.innerHTML = '';
+
+            try {
+                // 1. Login JWT
+                const loginRes = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+
+                const loginData = await loginRes.json();
+                if (!loginRes.ok) {
+                    throw new Error('Login Gagal: ' + loginData.message);
+                }
+
+                out.textContent = '[1/2] Token JWT Berhasil Diperoleh:\nBearer ' + loginData.token.substring(0, 48) + '...\n\n';
+                out.textContent += '[2/2] Memanggil GET /api/endpoint/produk dengan Header Authorization...';
+
+                // 2. Fetch EndPoint
+                const apiRes = await fetch('/api/endpoint/produk', {
+                    headers: { 'Authorization': 'Bearer ' + loginData.token }
+                });
+
+                const apiData = await apiRes.json();
+                if (!apiRes.ok) {
+                    throw new Error('Akses API Gagal: ' + apiData.message);
+                }
+
+                out.textContent += '\nStatus Respons: ' + apiData.status + ' (HTTP 200 OK)\n';
+                out.textContent += 'Client Terverifikasi: ' + apiData.client_identity + '\n';
+                out.textContent += 'Jumlah Item Didekripsi: ' + apiData.total_items + '\n\n';
+                out.textContent += 'Cuplikan JSON Respons:\n' + JSON.stringify(apiData.data, null, 2);
+
+                // 3. Render Card Preview
+                if (apiData.data && apiData.data.length > 0) {
+                    apiData.data.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'product-card';
+                        card.innerHTML = `
+                            <img src="${item.foto_produk}" alt="${item.nama_produk}" class="product-img" onerror="this.src='https://placehold.co/60x60?text=Produk'">
+                            <div class="product-meta">
+                                <h4>${item.nama_produk}</h4>
+                                <div class="category">${item.nama_kategori}</div>
+                                <div class="price">Rp ${Number(item.harga_produk).toLocaleString('id-ID')}</div>
+                            </div>
+                        `;
+                        productCards.appendChild(card);
+                    });
+                    previewContainer.style.display = 'block';
+                }
+            } catch (err) {
+                out.textContent = 'Terjadi Kesalahan:\n' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
