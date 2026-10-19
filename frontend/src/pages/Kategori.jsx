@@ -1,88 +1,188 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 function Kategori() {
   const [kategori, setKategori] = useState([]);
-  const [activeSource, setActiveSource] = useState('Memuat data...');
+  const [activeServer, setActiveServer] = useState(null); // 'A', 'B', or null
+  const [serverIdentity, setServerIdentity] = useState('Memuat data...');
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [lastChecked, setLastChecked] = useState(null);
 
-  useEffect(() => {
-    // Server Utama: Server A di Laptop Lokal
+  const fetchKategori = useCallback(() => {
+    setIsLoading(true);
+    setErrorMsg(null);
+
     const serverA = 'http://localhost:4000/api/kategori/';
-    // Server Cadangan (Fallback): Server B di Ubuntu Remote (Tailscale)
     const serverB = 'http://ubuntu.leopard-gila.ts.net:3002/api/kategori/';
 
-    axios.get(serverA)
+    // Percobaan 1: Request ke Server Utama (Laptop)
+    axios.get(serverA, { timeout: 2000 })
       .then(res => {
         if (res.data.status) {
           setKategori(res.data.data);
-          setActiveSource('Server Utama (Server A - Port 4000)');
-          console.log('Data berhasil dimuat dari Server Utama (A)');
+          setActiveServer('A');
+          setServerIdentity('Server Utama (Server A - Port 4000)');
+          setLastChecked(new Date().toLocaleTimeString('id-ID'));
+          setIsLoading(false);
         }
       })
       .catch(errA => {
-        console.warn('Server Utama (A) gagal merespons, beralih ke Server Cadangan (B)...', errA.message);
-        axios.get(serverB)
+        console.warn('Server Utama (A) tidak merespons, beralih ke Server B...', errA.message);
+        
+        // Percobaan 2: Fallback otomatis ke Server B (Ubuntu Remote)
+        axios.get(serverB, { timeout: 4000 })
           .then(res => {
             if (res.data.status) {
               setKategori(res.data.data);
-              setActiveSource('Server Cadangan / Fallback (Server B Ubuntu - Port 3002)');
-              console.log('Data berhasil dimuat dari Server Cadangan (B)');
+              setActiveServer('B');
+              setServerIdentity('Server Cadangan / Fallback (Server B Ubuntu - Port 3002)');
+              setLastChecked(new Date().toLocaleTimeString('id-ID'));
+              setIsLoading(false);
             }
           })
           .catch(errB => {
-            console.error('Kedua server gagal:', errB);
-            setErrorMsg('Kedua server gagal merespons permintaan.');
-            setActiveSource('Gagal terhubung ke semua server');
+            console.error('Kedua server gagal merespons:', errB.message);
+            setActiveServer('DOWN');
+            setErrorMsg('Server Utama (Port 4000) dan Server Cadangan (Port 3002) gagal merespons.');
+            setIsLoading(false);
           });
       });
   }, []);
 
-  return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '15px' }}>Data kategori</h2>
+  useEffect(() => {
+    fetchKategori();
+  }, [fetchKategori]);
 
-      {/* Info Sumber Server untuk Mempermudah Analisa Laporan */}
-      <div style={{
-        marginBottom: '15px',
-        padding: '8px 12px',
-        borderRadius: '4px',
-        backgroundColor: activeSource.includes('Server Utama') ? '#e8f5e9' : activeSource.includes('Server Cadangan') ? '#fff3e0' : '#ffebee',
-        color: activeSource.includes('Server Utama') ? '#2e7d32' : activeSource.includes('Server Cadangan') ? '#e65100' : '#c62828',
-        display: 'inline-block',
-        fontSize: '14px',
-        fontWeight: 'bold'
-      }}>
-        Status Koneksi: {activeSource}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Header Halaman */}
+      <div>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+          letterSpacing: '-0.02em',
+          margin: '0 0 6px 0'
+        }}>
+          Data kategori
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
+          Sistem otomatis memprioritaskan Server Utama di laptop. Jika terjadi kegagalan jaringan atau server mati, request dialihkan ke Server Cadangan di Ubuntu.
+        </p>
       </div>
 
-      {errorMsg ? (
-        <p style={{ color: 'red' }}>{errorMsg}</p>
-      ) : (
-        <table style={{ width: '100%', maxWidth: '400px', borderCollapse: 'collapse', marginTop: '10px' }}>
+      {/* Panel Status Koneksi & Aksi Uji */}
+      <div className="card-container" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '16px',
+        padding: '16px 20px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            Status Koneksi:
+          </span>
+          <div className={`status-pill ${activeServer === 'A' ? 'server-a' : activeServer === 'B' ? 'server-b' : 'error'}`}>
+            <span className={`status-dot ${activeServer === 'A' ? 'server-a' : activeServer === 'B' ? 'server-b' : 'error'}`}></span>
+            <span>{isLoading ? 'Menghubungi server...' : serverIdentity}</span>
+          </div>
+          {lastChecked && (
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              (Pukul {lastChecked})
+            </span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={fetchKategori}
+          disabled={isLoading}
+          className="btn-action"
+        >
+          {isLoading ? 'Memeriksa...' : 'Uji Ulang Koneksi'}
+        </button>
+      </div>
+
+      {/* Tampilan Error */}
+      {errorMsg && (
+        <div style={{
+          backgroundColor: 'var(--server-down-bg)',
+          border: '1px solid var(--server-down-border)',
+          color: 'var(--server-down-text)',
+          padding: '16px 20px',
+          borderRadius: 'var(--radius-md)',
+          fontSize: '14px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span>{errorMsg}</span>
+          <button
+            type="button"
+            onClick={fetchKategori}
+            className="btn-action"
+            style={{ borderColor: 'var(--server-down-border)', color: 'var(--server-down-text)' }}
+          >
+            Coba Lagi
+          </button>
+        </div>
+      )}
+
+      {/* Tabel Data Kategori */}
+      <div style={{ overflowX: 'auto' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: '2px solid #333', textAlign: 'left' }}>
-              <th style={{ padding: '8px 12px' }}>#</th>
-              <th style={{ padding: '8px 12px' }}>Nama</th>
+            <tr>
+              <th style={{ width: '80px' }}>#</th>
+              <th>Nama Kategori</th>
+              <th style={{ width: '220px' }}>Sumber Server</th>
             </tr>
           </thead>
           <tbody>
-            {kategori.map((item, index) => (
-              <tr key={item.id || index} style={{ borderBottom: '1px solid #ddd' }}>
-                <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>{item.id}</td>
-                <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>{item.nama_kategori}</td>
-              </tr>
-            ))}
-            {kategori.length === 0 && (
+            {isLoading ? (
               <tr>
-                <td colSpan="2" style={{ padding: '12px', textAlign: 'center', color: '#666' }}>
-                  Tidak ada data kategori
+                <td colSpan="3" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                  Memuat data kategori dari server...
                 </td>
               </tr>
+            ) : kategori.length === 0 ? (
+              <tr>
+                <td colSpan="3" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                  Tidak ada data kategori yang ditemukan.
+                </td>
+              </tr>
+            ) : (
+              kategori.map((item) => (
+                <tr key={item.id}>
+                  <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    {item.id}
+                  </td>
+                  <td style={{ fontWeight: 500 }}>
+                    {item.nama_kategori}
+                  </td>
+                  <td>
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: activeServer === 'A' ? '#ecfdf5' : '#fffbeb',
+                      color: activeServer === 'A' ? '#065f46' : '#92400e',
+                      border: activeServer === 'A' ? '1px solid #a7f3d0' : '1px solid #fde68a'
+                    }}>
+                      {activeServer === 'A' ? 'Server A (Laptop)' : 'Server B (Ubuntu)'}
+                    </span>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
-      )}
+      </div>
     </div>
   );
 }
