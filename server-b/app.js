@@ -4,11 +4,15 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var compression = require('compression');
+var cors = require('cors');
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/api');
 
 var app = express();
+
+// Middleware CORS
+app.use(cors());
 
 // Middleware kompresi HTTP GZIP
 app.use(compression());
@@ -25,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
+app.use('/apiserverb', apiRouter); // Alias untuk fallback sesuai modul workshop
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

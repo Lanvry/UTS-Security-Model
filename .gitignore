@@ -2,6 +2,8 @@
 node_modules/
 server-a/node_modules/
 server-b/node_modules/
+frontend/node_modules/
+frontend/dist/
 
 # Konfigurasi Lingkungan (Secret Keys)
 .env
