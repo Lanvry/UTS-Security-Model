@@ -3,48 +3,52 @@ import axios from 'axios';
 
 function Kategori() {
   const [kategori, setKategori] = useState([]);
-  const [activeServer, setActiveServer] = useState(null); // 'A', 'B', or null
+  const [activeServer, setActiveServer] = useState(null);
   const [serverIdentity, setServerIdentity] = useState('Memuat data...');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [lastChecked, setLastChecked] = useState(null);
+  const [noticeMsg, setNoticeMsg] = useState(null);
+
+  // Form State untuk Tambah / Edit
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null); // null = mode tambah, object = mode edit
+  const [inputNama, setInputNama] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const serverAUrl = 'http://localhost:4000/api/kategori/';
+  const serverBUrl = 'http://ubuntu.leopard-gila.ts.net:3002/api/kategori/';
 
   const fetchKategori = useCallback(() => {
     setIsLoading(true);
     setErrorMsg(null);
 
-    const serverA = 'http://localhost:4000/api/kategori/';
-    const serverB = 'http://ubuntu.leopard-gila.ts.net:3002/api/kategori/';
-
-    // Percobaan 1: Request ke Server Utama (Laptop)
-    axios.get(serverA, { timeout: 2000 })
+    // Percobaan 1: Server Utama (Laptop)
+    axios.get(serverAUrl, { timeout: 2000 })
       .then(res => {
         if (res.data.status) {
           setKategori(res.data.data);
           setActiveServer('A');
           setServerIdentity('Server Utama (Server A - Port 4000)');
-          setLastChecked(new Date().toLocaleTimeString('id-ID'));
           setIsLoading(false);
         }
       })
       .catch(errA => {
-        console.warn('Server Utama (A) tidak merespons, beralih ke Server B...', errA.message);
+        console.warn('Server Utama (A) gagal, beralih ke Server B...', errA.message);
         
-        // Percobaan 2: Fallback otomatis ke Server B (Ubuntu Remote)
-        axios.get(serverB, { timeout: 4000 })
+        // Percobaan 2: Fallback ke Server B (Ubuntu)
+        axios.get(serverBUrl, { timeout: 4000 })
           .then(res => {
             if (res.data.status) {
               setKategori(res.data.data);
               setActiveServer('B');
               setServerIdentity('Server Cadangan / Fallback (Server B Ubuntu - Port 3002)');
-              setLastChecked(new Date().toLocaleTimeString('id-ID'));
               setIsLoading(false);
             }
           })
           .catch(errB => {
-            console.error('Kedua server gagal merespons:', errB.message);
+            console.error('Kedua server gagal:', errB.message);
             setActiveServer('DOWN');
-            setErrorMsg('Server Utama (Port 4000) dan Server Cadangan (Port 3002) gagal merespons.');
+            setErrorMsg('Kedua server tidak dapat diakses.');
             setIsLoading(false);
           });
       });
@@ -54,128 +58,224 @@ function Kategori() {
     fetchKategori();
   }, [fetchKategori]);
 
+  // Buka Modal Tambah
+  const handleOpenAdd = () => {
+    setEditingItem(null);
+    setInputNama('');
+    setIsModalOpen(true);
+  };
+
+  // Buka Modal Edit
+  const handleOpenEdit = (item) => {
+    setEditingItem(item);
+    setInputNama(item.nama_kategori);
+    setIsModalOpen(true);
+  };
+
+  // Tutup Modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingItem(null);
+    setInputNama('');
+  };
+
+  // Submit Form (Tambah / Edit)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!inputNama.trim()) return;
+
+    setIsSubmitting(true);
+    setNoticeMsg(null);
+    setErrorMsg(null);
+
+    try {
+      if (editingItem) {
+        // Mode Edit: PUT ke Server A
+        await axios.put(`http://localhost:4000/api/kategori/${editingItem.id}`, {
+          nama_kategori: inputNama.trim()
+        });
+        setNoticeMsg('Kategori berhasil diperbarui & otomatis tersinkron ke Server B.');
+      } else {
+        // Mode Tambah: POST ke Server A
+        await axios.post('http://localhost:4000/api/kategori', {
+          nama_kategori: inputNama.trim()
+        });
+        setNoticeMsg('Kategori baru berhasil ditambahkan & otomatis tersinkron ke Server B.');
+      }
+      handleCloseModal();
+      fetchKategori();
+    } catch (err) {
+      setErrorMsg('Operasi gagal: ' + (err.response?.data?.message || err.message + ' (Pastikan Server A menyala untuk operasi tambah/edit)'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Hapus Kategori
+  const handleDelete = async (id, nama) => {
+    if (!window.confirm(`Yakin ingin menghapus kategori "${nama}"?`)) return;
+
+    try {
+      await axios.delete(`http://localhost:4000/api/kategori/${id}`);
+      setNoticeMsg(`Kategori "${nama}" berhasil dihapus.`);
+      fetchKategori();
+    } catch (err) {
+      setErrorMsg('Gagal menghapus: ' + (err.response?.data?.message || err.message + ' (Pastikan Server A menyala untuk operasi hapus)'));
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header Halaman */}
-      <div>
-        <h2 style={{
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.02em',
-          margin: '0 0 6px 0'
-        }}>
-          Data kategori
-        </h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
-          Sistem otomatis memprioritaskan Server Utama di laptop. Jika terjadi kegagalan jaringan atau server mati, request dialihkan ke Server Cadangan di Ubuntu.
-        </p>
-      </div>
-
-      {/* Panel Status Koneksi & Aksi Uji */}
-      <div className="card-container" style={{
+      {/* Header & Aksi Tambah */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '16px',
-        padding: '16px 20px'
+        gap: '12px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            Status Koneksi:
-          </span>
-          <div className={`status-pill ${activeServer === 'A' ? 'server-a' : activeServer === 'B' ? 'server-b' : 'error'}`}>
-            <span className={`status-dot ${activeServer === 'A' ? 'server-a' : activeServer === 'B' ? 'server-b' : 'error'}`}></span>
-            <span>{isLoading ? 'Menghubungi server...' : serverIdentity}</span>
-          </div>
-          {lastChecked && (
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              (Pukul {lastChecked})
-            </span>
-          )}
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0 }}>
+            Data kategori
+          </h2>
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: '2px 0 0 0' }}>
+            Manajemen data kategori dengan failover dan auto-sync multi-server.
+          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchKategori}
-          disabled={isLoading}
-          className="btn-action"
-        >
-          {isLoading ? 'Memeriksa...' : 'Uji Ulang Koneksi'}
-        </button>
-      </div>
-
-      {/* Tampilan Error */}
-      {errorMsg && (
-        <div style={{
-          backgroundColor: 'var(--server-down-bg)',
-          border: '1px solid var(--server-down-border)',
-          color: 'var(--server-down-text)',
-          padding: '16px 20px',
-          borderRadius: 'var(--radius-md)',
-          fontSize: '14px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>{errorMsg}</span>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             type="button"
             onClick={fetchKategori}
-            className="btn-action"
-            style={{ borderColor: 'var(--server-down-border)', color: 'var(--server-down-text)' }}
+            className="btn btn-secondary btn-sm"
           >
-            Coba Lagi
+            Refresh
           </button>
+          <button
+            type="button"
+            onClick={handleOpenAdd}
+            className="btn btn-primary btn-sm"
+          >
+            + Tambah Kategori
+          </button>
+        </div>
+      </div>
+
+      {/* Info Status Koneksi */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '10px 14px',
+        border: '1px solid #e5e7eb',
+        borderRadius: '6px',
+        backgroundColor: '#f9fafb',
+        fontSize: '13px'
+      }}>
+        <span style={{ fontWeight: 600, color: '#4b5563' }}>Status Koneksi:</span>
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontWeight: 500,
+          color: activeServer === 'A' ? '#059669' : activeServer === 'B' ? '#d97706' : '#dc2626'
+        }}>
+          <span style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: activeServer === 'A' ? '#059669' : activeServer === 'B' ? '#d97706' : '#dc2626'
+          }}></span>
+          {isLoading ? 'Menghubungi server...' : serverIdentity}
+        </span>
+      </div>
+
+      {/* Notifikasi Sukses */}
+      {noticeMsg && (
+        <div style={{
+          padding: '10px 14px',
+          backgroundColor: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          color: '#15803d',
+          borderRadius: '6px',
+          fontSize: '13px'
+        }}>
+          {noticeMsg}
         </div>
       )}
 
-      {/* Tabel Data Kategori */}
-      <div style={{ overflowX: 'auto' }}>
-        <table className="data-table">
+      {/* Notifikasi Error */}
+      {errorMsg && (
+        <div style={{
+          padding: '10px 14px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#b91c1c',
+          borderRadius: '6px',
+          fontSize: '13px'
+        }}>
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Tabel Kategori */}
+      <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+        <table className="clean-table" style={{ border: 'none' }}>
           <thead>
             <tr>
               <th style={{ width: '80px' }}>#</th>
               <th>Nama Kategori</th>
-              <th style={{ width: '220px' }}>Sumber Server</th>
+              <th style={{ width: '180px' }}>Sumber Server</th>
+              <th style={{ width: '140px', textAlign: 'right' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan="3" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                  Memuat data kategori dari server...
+                <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>
+                  Memuat data kategori...
                 </td>
               </tr>
             ) : kategori.length === 0 ? (
               <tr>
-                <td colSpan="3" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                  Tidak ada data kategori yang ditemukan.
+                <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>
+                  Belum ada data kategori.
                 </td>
               </tr>
             ) : (
               kategori.map((item) => (
                 <tr key={item.id}>
-                  <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    {item.id}
-                  </td>
-                  <td style={{ fontWeight: 500 }}>
-                    {item.nama_kategori}
-                  </td>
+                  <td style={{ fontWeight: 600, color: '#4b5563' }}>{item.id}</td>
+                  <td style={{ fontWeight: 500 }}>{item.nama_kategori}</td>
                   <td>
                     <span style={{
-                      display: 'inline-block',
                       fontSize: '12px',
-                      fontWeight: 500,
-                      padding: '3px 8px',
+                      padding: '2px 6px',
                       borderRadius: '4px',
-                      backgroundColor: activeServer === 'A' ? '#ecfdf5' : '#fffbeb',
-                      color: activeServer === 'A' ? '#065f46' : '#92400e',
-                      border: activeServer === 'A' ? '1px solid #a7f3d0' : '1px solid #fde68a'
+                      backgroundColor: activeServer === 'A' ? '#f0fdf4' : '#fffbeb',
+                      color: activeServer === 'A' ? '#166534' : '#9a3412',
+                      border: activeServer === 'A' ? '1px solid #bbf7d0' : '1px solid #fed7aa'
                     }}>
-                      {activeServer === 'A' ? 'Server A (Laptop)' : 'Server B (Ubuntu)'}
+                      {activeServer === 'A' ? 'Server A' : 'Server B'}
                     </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'inline-flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(item)}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item.id, item.nama_kategori)}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -183,6 +283,52 @@ function Kategori() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal Form Add / Edit */}
+      {isModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-content">
+            <h3 style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 16px 0', color: '#111827' }}>
+              {editingItem ? 'Edit Kategori' : 'Tambah Kategori Baru'}
+            </h3>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px', color: '#374151' }}>
+                  Nama Kategori
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={inputNama}
+                  onChange={(e) => setInputNama(e.target.value)}
+                  placeholder="Contoh: Perabotan Kantor"
+                  className="form-input"
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="btn btn-secondary"
+                  disabled={isSubmitting}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Menyimpan...' : (editingItem ? 'Simpan Perubahan' : 'Tambah Kategori')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

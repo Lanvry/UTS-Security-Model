@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../db');
 
-// POST /api/sync/receive - Langkah 1 & 2: Menerima Payload Terenkripsi dan Simpan ke DB B
+// POST /api/sync/receive - Menerima Payload Terenkripsi dan Simpan ke DB B
 router.post('/receive', async (req, res) => {
     const { kategori, produk } = (req.body && req.body.data) || {};
 
@@ -18,7 +18,7 @@ router.post('/receive', async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // Langkah 2: Simpan kategori terenkripsi ke DB B
+        // 1. Simpan kategori terenkripsi ke DB B
         for (const k of kategori) {
             await connection.query(
                 `INSERT INTO kategori (id, nama_kategori) 
@@ -28,7 +28,13 @@ router.post('/receive', async (req, res) => {
             );
         }
 
-        // Langkah 2: Simpan produk terenkripsi ke DB B
+        // Hapus kategori yang sudah dihapus dari DB A jika ada id
+        const kategoriIds = kategori.map(k => k.id).filter(Boolean);
+        if (kategoriIds.length > 0) {
+            await connection.query('DELETE FROM kategori WHERE id NOT IN (?)', [kategoriIds]);
+        }
+
+        // 2. Simpan produk terenkripsi ke DB B
         for (const p of produk) {
             await connection.query(
                 `INSERT INTO produk (id, nama_produk, harga_produk, foto_produk, id_kategori) 
@@ -42,12 +48,18 @@ router.post('/receive', async (req, res) => {
             );
         }
 
+        // Hapus produk yang sudah dihapus dari DB A jika ada id
+        const produkIds = produk.map(p => p.id).filter(Boolean);
+        if (produkIds.length > 0) {
+            await connection.query('DELETE FROM produk WHERE id NOT IN (?)', [produkIds]);
+        }
+
         await connection.commit();
 
         return res.json({
             status: 'success',
             code: 200,
-            message: `Berhasil menerima dan menyimpan ${produk.length} produk terenkripsi ke DB B.`,
+            message: `Berhasil menerima & sinkronisasi ${kategori.length} kategori dan ${produk.length} produk ke DB B.`,
             received_at: new Date().toISOString()
         });
     } catch (err) {

@@ -3,141 +3,112 @@ import { Link } from 'react-router-dom';
 
 function Home() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-      {/* Intro Section */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div>
-        <h2 style={{
-          fontSize: '26px',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.02em',
-          margin: '0 0 8px 0'
-        }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: '0 0 6px 0' }}>
           Sistem Multi-Server & Fallback Mechanism
         </h2>
-        <p style={{
-          fontSize: '15px',
-          color: 'var(--text-secondary)',
-          maxWidth: '720px',
-          margin: 0,
-          lineHeight: 1.6
-        }}>
-          Implementasi arsitektur toleransi kesalahan (Fault Tolerance) pada sisi client React JS. Sistem memastikan layanan tetap dapat diakses oleh pengguna secara transparan meskipun server utama mengalami gangguan teknis.
+        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0, lineHeight: 1.6, maxWidth: '680px' }}>
+          Aplikasi pengujian toleransi kesalahan (Fault Tolerance) dan sinkronisasi otomatis terenkripsi antar server Express.js dan React JS.
         </p>
       </div>
 
-      {/* Grid Arsitektur Server */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '16px'
       }}>
-        {/* Node Server A */}
-        <div className="card-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Node Utama
-            </span>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: '4px',
-              backgroundColor: '#ecfdf5',
-              color: '#065f46',
-              border: '1px solid #a7f3d0'
-            }}>
+        {/* Card Server A */}
+        <div style={{
+          border: '1px solid #e5e7eb',
+          borderRadius: '6px',
+          padding: '18px',
+          backgroundColor: '#ffffff'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>SERVER UTAMA</span>
+            <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '4px' }}>
               Port 4000
             </span>
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: '#111827' }}>
             Server A (Laptop Lokal)
           </h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-            Bertindak sebagai server sumber primer (*Plaintext*). Menyimpan data kategori dan produk pada basis data lokal `db_a`.
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
+            Pengelola data asli (*Plaintext*) pada basis data `db_a`. Melayani operasi CRUD dan sinkronisasi ke Server B.
           </p>
         </div>
 
-        {/* Node Server B */}
-        <div className="card-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Node Cadangan
-            </span>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: '4px',
-              backgroundColor: '#fffbeb',
-              color: '#92400e',
-              border: '1px solid #fde68a'
-            }}>
+        {/* Card Server B */}
+        <div style={{
+          border: '1px solid #e5e7eb',
+          borderRadius: '6px',
+          padding: '18px',
+          backgroundColor: '#ffffff'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>SERVER CADANGAN</span>
+            <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: '#fffbeb', color: '#9a3412', border: '1px solid #fed7aa', borderRadius: '4px' }}>
               Port 3002
             </span>
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
-            Server B (Ubuntu Server)
+          <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: '#111827' }}>
+            Server B (Ubuntu Remote)
           </h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-            Server cadangan remote via Tailscale VPN. Menyimpan data terenkripsi pada `db_b` (*Encryption at Rest*) dan melayani request saat Server A gagal.
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
+            Penerima data terenkripsi pada `db_b`. Menjadi server failover/cadangan saat Server A dimatikan atau tidak merespons.
           </p>
         </div>
 
-        {/* Alur Auto-Sync */}
-        <div className="card-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Sinkronisasi
-            </span>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '2px 8px',
-              borderRadius: '4px',
-              backgroundColor: '#eff6ff',
-              color: '#1e40af',
-              border: '1px solid #bfdbfe'
-            }}>
-              GZIP + AES-256
+        {/* Card Auto-Sync */}
+        <div style={{
+          border: '1px solid #e5e7eb',
+          borderRadius: '6px',
+          padding: '18px',
+          backgroundColor: '#ffffff'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>SINKRONISASI</span>
+            <span style={{ fontSize: '11px', padding: '2px 6px', backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px' }}>
+              Auto-Sync
             </span>
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
-            Auto-Sync Engine
+          <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: '#111827' }}>
+            Enkripsi AES-256 + GZIP
           </h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-            Sinkronisasi otomatis berjalan berkala (setiap 30 detik) dan otomatis terpicu secara instan saat data produk atau kategori baru ditambahkan.
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
+            Data dikompresi dan dienkripsi sebelum dikirim. Berjalan berkala setiap 30 detik serta instan saat data ditambahkan/diubah.
           </p>
         </div>
       </div>
 
-      {/* Navigasi Pengujian Cepat */}
-      <div className="card-container" style={{
+      {/* Navigasi Cepat */}
+      <div style={{
+        border: '1px solid #e5e7eb',
+        borderRadius: '6px',
+        padding: '18px 20px',
+        backgroundColor: '#fafafa',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '16px',
-        backgroundColor: '#f1f5f9'
+        gap: '12px'
       }}>
         <div>
-          <h4 style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
-            Mulai Pengujian Fallback
+          <h4 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: '#111827' }}>
+            Buka Menu Pengujian
           </h4>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-            Pilih menu untuk melihat simulasi failover saat salah satu server dimatikan.
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: '2px 0 0 0' }}>
+            Kelola data dan periksa respon fallback saat salah satu server dimatikan.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link to="/kategori" className="btn-action" style={{ textDecoration: 'none' }}>
-            Lihat Kategori
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link to="/kategori" className="btn btn-secondary btn-sm">
+            Buka Kategori
           </Link>
-          <Link to="/produk" className="btn-action" style={{ textDecoration: 'none' }}>
-            Lihat Produk
+          <Link to="/produk" className="btn btn-secondary btn-sm">
+            Buka Produk
           </Link>
         </div>
       </div>

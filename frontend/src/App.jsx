@@ -8,47 +8,41 @@ function Navigation() {
   return (
     <header style={{
       backgroundColor: '#ffffff',
-      borderBottom: '1px solid #e2e8f0',
-      position: 'sticky',
-      top: 0,
-      zIndex: 10
+      borderBottom: '1px solid #e5e7eb'
     }}>
       <div style={{
-        maxWidth: '1000px',
+        maxWidth: '960px',
         margin: '0 auto',
-        padding: '16px 24px',
+        padding: '16px 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '12px'
       }}>
-        {/* Brand Identity */}
         <div>
           <h1 style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#0f172a',
-            letterSpacing: '-0.02em',
+            fontSize: '16px',
+            fontWeight: 600,
+            color: '#111827',
             margin: 0
           }}>
-            Multi-Server Architecture
+            Multi-Server Workshop
           </h1>
           <p style={{
             fontSize: '12px',
-            color: '#64748b',
+            color: '#6b7280',
             margin: '2px 0 0 0'
           }}>
-            High Availability Client-Side Fallback System
+            Fallback & Auto-Sync System
           </p>
         </div>
 
-        {/* Navigation Tabs */}
         <nav aria-label="Main Navigation">
           <ul style={{
             display: 'flex',
             listStyle: 'none',
-            gap: '8px',
+            gap: '6px',
             margin: 0,
             padding: 0
           }}>
@@ -62,15 +56,14 @@ function Navigation() {
                   to={item.to}
                   style={({ isActive }) => ({
                     display: 'inline-block',
-                    padding: '8px 16px',
+                    padding: '6px 12px',
                     borderRadius: '6px',
                     fontSize: '14px',
                     fontWeight: 500,
                     textDecoration: 'none',
-                    transition: 'all 0.15s ease',
-                    color: isActive ? '#0f172a' : '#475569',
-                    backgroundColor: isActive ? '#f1f5f9' : 'transparent',
-                    border: isActive ? '1px solid #cbd5e1' : '1px solid transparent'
+                    color: isActive ? '#111827' : '#6b7280',
+                    backgroundColor: isActive ? '#f3f4f6' : 'transparent',
+                    border: isActive ? '1px solid #e5e7eb' : '1px solid transparent'
                   })}
                 >
                   {item.label}
@@ -87,15 +80,15 @@ function Navigation() {
 function App() {
   return (
     <Router>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }}>
         <Navigation />
 
         <main style={{
           flex: 1,
-          maxWidth: '1000px',
+          maxWidth: '960px',
           width: '100%',
           margin: '0 auto',
-          padding: '28px 24px'
+          padding: '24px 20px'
         }}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -105,14 +98,14 @@ function App() {
         </main>
 
         <footer style={{
-          borderTop: '1px solid #e2e8f0',
+          borderTop: '1px solid #e5e7eb',
           backgroundColor: '#ffffff',
-          padding: '16px 24px',
+          padding: '16px 20px',
           textAlign: 'center',
-          fontSize: '13px',
-          color: '#64748b'
+          fontSize: '12px',
+          color: '#9ca3af'
         }}>
-          Implementasi Fallback Mechanism: Server A (Laptop:4000) dan Server B (Ubuntu:3002)
+          Multi-Server Fallback Architecture (Server A Laptop:4000 & Server B Ubuntu:3002)
         </footer>
       </div>
     </Router>
