@@ -1,64 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
-const db = require('../../db');
-const { encrypt } = require('../../middleware/crypto');
+const { syncToRemoteServer, getSyncStatus } = require('../../services/syncService');
 
-// POST /api/sync - Langkah 1: Enkripsi GZIP + AES-256 dan Kirim Data ke Server B
+// GET /api/sync/status - Status auto-sync terakhir
+router.get('/status', (req, res) => {
+    res.json({
+        status: 'success',
+        data: getSyncStatus()
+    });
+});
+
+// POST /api/sync - Trigger sinkronisasi manual ke Server B
 router.post('/', async (req, res) => {
-    try {
-        const [kategori] = await db.query('SELECT * FROM kategori');
-        const [produk] = await db.query('SELECT * FROM produk');
+    const result = await syncToRemoteServer('manual_trigger');
 
-        if (produk.length === 0 && kategori.length === 0) {
-            if (req.accepts('html')) return res.redirect('/?err=Data DB A masih kosong');
-            return res.status(400).json({ status: 'error', message: 'Data DB A masih kosong' });
+    if (req.accepts('html')) {
+        if (result.status === 'success') {
+            return res.redirect('/?msg=' + encodeURIComponent('Sinkronisasi Sukses: ' + (result.server_b_response ? result.server_b_response.message : 'OK')));
+        } else {
+            return res.redirect('/?err=' + encodeURIComponent('Sinkronisasi Gagal: ' + result.message));
         }
+    }
 
-        // Proses enkripsi GZIP + AES-256
-        const encryptedKategori = kategori.map(k => ({
-            id: k.id,
-            nama_kategori: encrypt(k.nama_kategori)
-        }));
-
-        const encryptedProduk = produk.map(p => ({
-            id: p.id,
-            nama_produk: encrypt(p.nama_produk),
-            harga_produk: encrypt(String(p.harga_produk)),
-            foto_produk: encrypt(p.foto_produk),
-            id_kategori: p.id_kategori
-        }));
-
-        const payload = {
-            sender: 'Server A',
-            timestamp: new Date().toISOString(),
-            data: {
-                kategori: encryptedKategori,
-                produk: encryptedProduk
-            }
-        };
-
-        let serverBUrl = process.env.SERVER_B_URL || 'http://macbook.leopard-gila.ts.net';
-        if (!serverBUrl.endsWith('/api/sync/receive')) {
-            serverBUrl = serverBUrl.replace(/\/+$/, '') + '/api/sync/receive';
-        }
-        const response = await axios.post(serverBUrl, payload, { timeout: 10000 });
-
-        if (req.accepts('html')) {
-            return res.redirect('/?msg=' + encodeURIComponent('Sinkronisasi Sukses: ' + response.data.message));
-        }
-
+    if (result.status === 'success') {
         res.json({
             status: 'success',
             message: 'Sinkronisasi berhasil dikirim ke Server B',
-            server_b_response: response.data
+            data: result
         });
-    } catch (err) {
-        const errMsg = err.response ? (err.response.data.message || err.response.statusText) : err.message;
-        if (req.accepts('html')) {
-            return res.redirect('/?err=' + encodeURIComponent('Gagal mengirim ke Server B: ' + errMsg));
-        }
-        res.status(500).json({ status: 'error', message: errMsg });
+    } else {
+        res.status(500).json({
+            status: 'error',
+            message: result.message
+        });
     }
 });
 

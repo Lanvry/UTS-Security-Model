@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
             LEFT JOIN kategori k ON p.id_kategori = k.id 
             ORDER BY p.id ASC
         `);
-        res.json({ status: 'success', total: produk.length, data: produk });
+        res.json({ status: 'success', server: 'Server A (Local Laptop)', total: produk.length, data: produk });
     } catch (err) {
         res.status(500).json({ status: 'error', message: err.message });
     }
@@ -30,8 +30,12 @@ router.post('/', async (req, res) => {
             'INSERT INTO produk (nama_produk, harga_produk, foto_produk, id_kategori) VALUES (?, ?, ?, ?)',
             [nama_produk.trim(), Number(harga_produk), foto_produk.trim() || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300', Number(id_kategori)]
         );
-        if (req.accepts('html')) return res.redirect('/?msg=Produk berhasil disimpan ke DB A');
-        res.status(201).json({ status: 'success', message: 'Produk berhasil disimpan ke DB A', id: result.insertId });
+        // Trigger Auto-Sync ke Server B di background
+        const { syncToRemoteServer } = require('../../services/syncService');
+        syncToRemoteServer('insert_produk').catch(e => console.warn('[Auto-Sync] Gagal trigger:', e.message));
+
+        if (req.accepts('html')) return res.redirect('/?msg=Produk berhasil disimpan ke DB A (Auto-Sync dijalankan)');
+        res.status(201).json({ status: 'success', message: 'Produk berhasil disimpan & sinkronisasi otomatis dijalankan', id: result.insertId });
     } catch (err) {
         if (req.accepts('html')) return res.redirect('/?err=' + encodeURIComponent(err.message));
         res.status(500).json({ status: 'error', message: err.message });
