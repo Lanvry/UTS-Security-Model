@@ -9,6 +9,8 @@ class Watchdog {
         this.alertCallback = alertCallback || (() => {});
         this.failureThreshold = options.failureThreshold || 2;
         this.requestTimeoutMs = options.requestTimeoutMs || 5000;
+        this.bootGracePeriodMs = options.bootGracePeriodMs || 0;
+        this.startedAt = Date.now();
         this.targets = new Map();
         this.timer = null;
     }
@@ -53,7 +55,8 @@ class Watchdog {
             target.consecutiveFails += 1;
             target.lastError = errorDetail;
 
-            if (target.consecutiveFails >= this.failureThreshold && target.status !== 'DOWN') {
+            const isGrace = (Date.now() - this.startedAt) < this.bootGracePeriodMs;
+            if (target.consecutiveFails >= this.failureThreshold && target.status !== 'DOWN' && !isGrace) {
                 target.status = 'DOWN';
                 await this.triggerAlert(targetName, 'DOWN', errorDetail);
             }

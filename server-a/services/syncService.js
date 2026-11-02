@@ -98,8 +98,10 @@ async function syncToRemoteServer(trigger = 'manual') {
         lastSyncStatus = `Gagal: ${errMsg}`;
         console.warn(`[Auto-Sync - ${trigger}] Gagal mengirim ke Server B: ${errMsg}`);
 
-        // Kirim alert WA jika terjadi kegagalan sinkronisasi
-        await dispatchMonitorNotification('sync_error', `🚨 Gagal sinkronisasi data ke Server B (${trigger}): ${errMsg}`);
+        // Kirim alert WA jika terjadi kegagalan sinkronisasi (hanya pada mutasi data atau trigger manual)
+        if (trigger !== 'periodic_timer' && trigger !== 'initial_boot') {
+            await dispatchMonitorNotification('sync_error', `🚨 Gagal sinkronisasi data ke Server B (${trigger}): ${errMsg}`);
+        }
 
         return {
             status: 'error',

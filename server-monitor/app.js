@@ -22,7 +22,7 @@ function createApp(notifyHandler = null, apiKey = null) {
         const clientKey = req.headers['x-api-key'];
         const configuredKey = apiKey || process.env.MONITOR_API_KEY;
 
-        if (configuredKey && clientKey !== configuredKey) {
+        if (!configuredKey || clientKey !== configuredKey) {
             return res.status(401).json({
                 status: 'error',
                 message: 'Unauthorized: Invalid or missing x-api-key'

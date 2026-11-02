@@ -2,9 +2,10 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const { createApp } = require('./app');
-const { initWhatsApp, sendWhatsAppMessage } = require('./services/whatsapp');
+const { initWhatsApp, sendWhatsAppMessage, formatAlertMessage } = require('./services/whatsapp');
 const { Watchdog } = require('./services/monitor');
 
+const HOST = process.env.MONITOR_HOST || '127.0.0.1';
 const PORT = process.env.MONITOR_PORT || 3005;
 const INTERVAL_MS = parseInt(process.env.MONITOR_INTERVAL_MS, 10) || 10000;
 const SERVER_A_URL = process.env.SERVER_A_URL || 'http://127.0.0.1:4000';
@@ -22,30 +23,14 @@ async function bootstrap() {
         console.warn('⚠️ [WhatsApp] Peringatan: Inisialisasi Baileys ditunda atau gagal:', err.message);
     }
 
-    // Inisialisasi Watchdog State Machine
+    // Inisialisasi Watchdog State Machine dengan grace period 15 detik
     const watchdog = new Watchdog(async (serverName, type, details) => {
-        let text = '';
-        const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-
-        if (type === 'DOWN') {
-            text = `🚨 *[ALERT] SERVER DOWN*\n\n` +
-                   `• *Target:* ${serverName.toUpperCase()}\n` +
-                   `• *Status:* Tidak Merespons / Offline\n` +
-                   `• *Error:* ${details || 'Connection Timeout'}\n` +
-                   `• *Waktu:* ${timestamp} WIB\n\n` +
-                   `_Harap segera periksa server terkait!_`;
-        } else if (type === 'RECOVERED') {
-            text = `🟢 *[RECOVERED] SERVER ONLINE*\n\n` +
-                   `• *Target:* ${serverName.toUpperCase()}\n` +
-                   `• *Status:* Kembali Beroperasi Normal (HTTP 200)\n` +
-                   `• *Waktu:* ${timestamp} WIB`;
-        }
-
+        const text = formatAlertMessage(serverName, type, details);
         if (text) {
             console.log(`[Alert -> WA] Mengirimkan alert ${type} untuk ${serverName}`);
             await sendWhatsAppMessage(text);
         }
-    }, { failureThreshold: 2 });
+    }, { failureThreshold: 2, bootGracePeriodMs: 15000 });
 
     // Daftarkan server target pemantauan
     watchdog.registerTarget('Server A', `${SERVER_A_URL.replace(/\/+$/, '')}/health`);
@@ -60,8 +45,8 @@ async function bootstrap() {
     };
 
     const app = createApp(notifyHandler, process.env.MONITOR_API_KEY);
-    const server = app.listen(PORT, () => {
-        console.log(`📡 Server Monitor berjalan pada port ${PORT}`);
+    const server = app.listen(PORT, HOST, () => {
+        console.log(`📡 Server Monitor berjalan pada ${HOST}:${PORT}`);
         console.log(`🔍 Polling Server A: ${SERVER_A_URL}/health`);
         console.log(`🔍 Polling Server B: ${SERVER_B_URL}/health`);
         console.log(`⏱️ Interval Pemantauan: ${INTERVAL_MS / 1000} detik`);

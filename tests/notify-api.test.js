@@ -56,6 +56,17 @@ async function testNotifyApi() {
         const resBadAuth = await makePostRequest(server, '/api/notify', { 'x-api-key': 'wrong-key' }, { message: 'Test message' });
         assert.strictEqual(resBadAuth.status, 401, 'Should return 401 when API key is invalid');
 
+        // 2b. Fail-closed: Even if app has no key configured, it must reject unauthenticated requests
+        const appNoKey = createApp(mockNotifier, null);
+        const serverNoKey = http.createServer(appNoKey);
+        await new Promise(r => serverNoKey.listen(0, r));
+        try {
+            const resNoKey = await makePostRequest(serverNoKey, '/api/notify', {}, { message: 'Test message' });
+            assert.strictEqual(resNoKey.status, 401, 'Should reject when no API key is configured (fail-closed)');
+        } finally {
+            serverNoKey.close();
+        }
+
         // 3. Missing message field -> 400
         const resNoMsg = await makePostRequest(server, '/api/notify', { 'x-api-key': 'secret-test-key-123' }, {});
         assert.strictEqual(resNoMsg.status, 400, 'Should return 400 when message is empty');
