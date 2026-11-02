@@ -10,6 +10,7 @@ Implementasi arsitektur pertukaran dan sinkronisasi data terenkripsi berbasis **
 - **Server B (Port 3001)**: Menerima payload terenkripsi dan menyimpannya ke `db_b` (*Encryption at Rest*).
 - **Protected EndPoint API**: Verifikasi token JWT (`POST /api/auth/login`) sebelum data dari `db_b` didekripsi dan disajikan ke client (`GET /api/endpoint/produk`).
 - **HTTP Compression**: Dukungan kompresi transport level GZIP menggunakan middleware `compression`.
+- **WhatsApp Server Downtime & Sync Monitor (`server-monitor`)**: Microservice mandiri berbasis **Baileys** yang memantau kesehatan Server A & Server B secara real-time via endpoint `GET /health`. Mengirim alert darurat ke WhatsApp jika server down, alert saat pemulihan, serta laporan audit sinkronisasi database.
 
 ---
 
@@ -39,14 +40,26 @@ mysql -u root < schema.sql
 npm install
 cd server-a && npm install && cd ..
 cd server-b && npm install && cd ..
+cd server-monitor && npm install && cd ..
 ```
 
 ### 5. Menjalankan Server
 - **Server A**:
   ```bash
-  cd server-a && PORT=3000 npm start
+  npm run start:a
   ```
 - **Server B**:
   ```bash
-  cd server-b && PORT=3001 npm start
+  npm run start:b
   ```
+- **WhatsApp Monitor (Baileys Watchdog)**:
+  ```bash
+  npm run start:monitor
+  ```
+  *(Saat pertama kali dijalankan, scan QR code yang muncul di terminal menggunakan aplikasi WhatsApp di ponsel).*
+
+### 6. Menjalankan Pengujian Otomatis
+Untuk menguji seluruh komponen kesehatan server, WhatsApp normalizer, state machine anti-flapping, dan simulasi downtime:
+```bash
+npm test
+```

@@ -6,7 +6,8 @@
   "scripts": {
     "start:a": "node server-a/bin/www",
     "start:b": "node server-b/bin/www",
-    "start:monitor": "node server-monitor/index.js"
+    "start:monitor": "node server-monitor/index.js",
+    "test": "node tests/health-check.test.js && node tests/whatsapp-service.test.js && node tests/monitor-state.test.js && node tests/notify-api.test.js && node tests/e2e-simulation.test.js"
   },
   "keywords": [],
   "author": "",
