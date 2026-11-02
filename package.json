@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start:a": "node server-a/bin/www",
-    "start:b": "node server-b/bin/www"
+    "start:b": "node server-b/bin/www",
+    "start:monitor": "node server-monitor/index.js"
   },
   "keywords": [],
   "author": "",

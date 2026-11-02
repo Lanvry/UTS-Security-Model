@@ -2,6 +2,8 @@
 node_modules/
 server-a/node_modules/
 server-b/node_modules/
+server-monitor/node_modules/
+server-monitor/auth_info_baileys/
 frontend/node_modules/
 frontend/dist/
 
