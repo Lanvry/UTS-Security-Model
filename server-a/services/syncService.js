@@ -9,6 +9,26 @@ let lastSyncTime = null;
 let lastSyncStatus = 'Belum pernah sinkronisasi';
 
 /**
+ * Mengirimkan event notifikasi ke service server-monitor via POST /api/notify
+ */
+async function dispatchMonitorNotification(topic, message) {
+    try {
+        const monitorUrl = process.env.MONITOR_URL || 'http://127.0.0.1:3005';
+        const apiKey = process.env.MONITOR_API_KEY;
+        await axios.post(`${monitorUrl.replace(/\/+$/, '')}/api/notify`, {
+            topic,
+            message
+        }, {
+            headers: { 'x-api-key': apiKey },
+            timeout: 3000
+        });
+    } catch (e) {
+        // Jangan hentikan flow sinkronisasi jika monitor belum berjalan
+        console.warn('[Sync-Notification] Server-monitor tidak merespons (abaikan jika monitor belum berjalan):', e.message);
+    }
+}
+
+/**
  * Fungsi utama sinkronisasi data dari DB A (Laptop) ke DB B (Ubuntu Remote)
  * @param {string} trigger - Penyebab sinkronisasi (e.g. 'periodic', 'new_produk', 'manual')
  */
@@ -63,6 +83,11 @@ async function syncToRemoteServer(trigger = 'manual') {
         lastSyncStatus = `Sukses (${response.data.message || 'OK'})`;
         console.log(`[Auto-Sync - ${trigger}] Berhasil sinkronisasi ${kategori.length} kategori & ${produk.length} produk ke Server B (${lastSyncTime})`);
 
+        // Notifikasi WA hanya untuk mutasi data nyata / manual, senyap untuk periodic timer
+        if (trigger !== 'periodic_timer' && trigger !== 'initial_boot') {
+            await dispatchMonitorNotification('sync', `Berhasil sinkronisasi ${kategori.length} kategori & ${produk.length} produk ke Server B (Trigger: ${trigger}).`);
+        }
+
         return {
             status: 'success',
             server_b_response: response.data,
@@ -72,6 +97,10 @@ async function syncToRemoteServer(trigger = 'manual') {
         const errMsg = err.response ? (err.response.data.message || err.response.statusText) : err.message;
         lastSyncStatus = `Gagal: ${errMsg}`;
         console.warn(`[Auto-Sync - ${trigger}] Gagal mengirim ke Server B: ${errMsg}`);
+
+        // Kirim alert WA jika terjadi kegagalan sinkronisasi
+        await dispatchMonitorNotification('sync_error', `🚨 Gagal sinkronisasi data ke Server B (${trigger}): ${errMsg}`);
+
         return {
             status: 'error',
             message: errMsg
