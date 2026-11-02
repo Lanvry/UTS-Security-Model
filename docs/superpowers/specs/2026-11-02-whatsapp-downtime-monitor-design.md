@@ -2,42 +2,49 @@
 
 ## 1. Intent & The Why
 Proyek UTS Security Model mengimplementasikan arsitektur data terenkripsi multi-server (Server A mengelola plaintext dan mengenkripsi data via AES-256-CBC + GZIP, Server B menyimpan ciphertext dan melayani dekripsi terautentikasi via JWT). 
-Untuk memastikan keandalan sistem dan memenuhi kebutuhan integrasi WhatsApp, dibutuhkan layanan pemantau (observability / watchdog) yang dapat:
+Untuk memastikan keandalan sistem dan memenuhi kebutuhan integrasi WhatsApp, dibutuhkan layanan pemantau (*watchdog / observability service*) yang dapat:
 1. Mendeteksi secara mandiri jika Server A atau Server B mengalami kegagalan (*down* / *crash* / *unresponsive*).
-2. Mengirimkan notifikasi darurat secara instan ke nomor WhatsApp admin/pengembang saat server mati dan saat server berhasil pulih (*recovered*).
-3. Mengirimkan notifikasi audit berkala saat sinkronisasi data antar-server sukses atau gagal.
+2. Mengirimkan notifikasi darurat secara instan ke nomor WhatsApp admin saat server mati dan saat server berhasil pulih (*recovered*).
+3. Mengirimkan notifikasi audit saat sinkronisasi data antar-server mengalami kegagalan (*error*) atau saat ada perubahan data baru (*mutation*).
 
-Karena Baileys terikat pada siklus hidup proses Node.js, menempatkannya di dalam Server A atau Server B akan menyebabkan kegagalan deteksi jika server tersebut mati (*single point of failure*). Oleh karena itu, monitor dipisahkan menjadi microservice independen.
+Karena Baileys terikat pada siklus hidup proses Node.js, menempatkannya di dalam Server A atau Server B akan menyebabkan kegagalan deteksi jika server tersebut mati (*single point of failure*). Oleh karena itu, monitor dipisahkan menjadi microservice independen (`server-monitor`).
 
 ---
 
 ## 2. Goals, Non-Goals, Anti-Goals
 
 ### Goals
-- **Independent Health Check**: Service `server-monitor` berjalan di proses/port terpisah (contoh: port 3005) dan secara periodik melakukan *health polling* (default tiap 10 detik) ke Server A dan Server B.
-- **WhatsApp Alerting via Baileys**: Menggunakan `@whiskeysockets/baileys` yang menyimpan kredensial auth lokal (multi-file auth state). Menampilkan terminal QR code saat inisialisasi awal.
-- **Stateful Alerting (Anti-Spam)**:
-  - Notifikasi *DOWN* hanya dikirim **satu kali** saat status transisi dari `UP` -> `DOWN`.
-  - Notifikasi *RECOVERED* dikirim **satu kali** saat status transisi dari `DOWN` -> `UP`.
-  - Tidak membanjiri chat WhatsApp dengan pesan per detik jika server tetap down.
-- **Notification API Endpoint**: Endpoint `POST /api/notify` pada `server-monitor` agar Server A / Server B dapat mengirimkan pesan notifikasi kustom (misal event sinkronisasi database, token alert).
-- **Health Endpoint Standar**: Menyediakan endpoint `/health` ringan pada Server A dan Server B yang mengembalikan status HTTP 200 dan uptime.
+- **Independent Health Check**: Service `server-monitor` berjalan di proses/port terpisah (port `3005`) dan secara periodik melakukan health polling (default tiap 10 detik) ke Server A dan Server B.
+- **WhatsApp Alerting via Baileys**: Menggunakan `@whiskeysockets/baileys` yang menyimpan kredensial auth lokal (`server-monitor/auth_info_baileys`). Menampilkan terminal QR code saat inisialisasi awal.
+- **Stateful Alerting & Anti-Flapping**:
+  - Ambang batas kegagalan: Memerlukan **2 kali kegagalan beruntun** (*consecutive failures*) sebelum menyatakan server `DOWN` untuk mencegah *false alarm* akibat fluktuasi latensi WAN/Tailscale.
+  - Notifikasi *DOWN* hanya dikirim **satu kali** saat status beralih ke `DOWN`.
+  - Notifikasi *RECOVERED* dikirim **satu kali** saat status beralih kembali ke `UP`.
+- **Sync Notification Policy (Anti-Ban/Anti-Spam)**:
+  - Notifikasi sinkronisasi **hanya** dikirim saat terjadi **error/kegagalan** atau saat terjadi **perubahan data nyata (insert/update/delete)**.
+  - Heartbeat timer rutin setiap 30 detik yang tidak membawa perubahan data **dibuat senyap (silent)** agar nomor WhatsApp tidak terblokir oleh sistem anti-spam WhatsApp.
+- **Notification API Endpoint**: Endpoint `POST /api/notify` pada `server-monitor` (dilindungi `x-api-key` sederhana) agar Server A dapat memicu notifikasi kustom.
+- **Health Endpoints**: Menyediakan endpoint `GET /health` ringan pada Server A dan Server B yang mengembalikan status HTTP 200, nama server, dan timestamp.
 
 ### Non-Goals
-- Membuat sistem WhatsApp Bot interaktif 2 arah yang kompleks (seperti e-commerce catalog checkout).
-- Menggantikan tools monitoring skala enterprise seperti Prometheus/Grafana.
+- Membuat bot percakapan 2 arah yang kompleks (seperti chatbot NLP belanja).
+- Menggantikan tools monitoring enterprise seperti Prometheus/Grafana.
 
 ### Anti-Goals
 - Menempatkan instance Baileys di dalam Server A atau Server B yang dapat menyebabkan *silent failure* saat server crash.
-- Melakukan spamming notifikasi WhatsApp pada setiap interval polling ketika server sedang mati.
+- Melakukan spamming pesan WhatsApp pada setiap interval polling atau setiap kali timer auto-sync 30 detik berdetak.
 
 ---
 
-## 3. Constraints
-- Menjaga integritas kode yang sudah ada pada Server A dan Server B tanpa merusak flow enkripsi AES-256 dan auto-sync.
-- Menggunakan Node.js, Express, dan `@whiskeysockets/baileys` + `qrcode-terminal` (atau web QR sederhana).
-- Nomor tujuan WhatsApp admin dikonfigurasi melalui `.env` (`WA_TARGET_PHONE=628xxxxxxxxxx`).
-- Interval polling dan URL target Server A dan Server B dikonfigurasi via `.env`.
+## 3. Constraints & Configuration
+- Menjaga integritas kode enkripsi AES-256 dan sinkronisasi di Server A dan Server B.
+- Konfigurasi terpusat di `.env`:
+  - `MONITOR_PORT=3005`
+  - `MONITOR_INTERVAL_MS=10000` (polling setiap 10 detik)
+  - `SERVER_A_URL=http://127.0.0.1:4000`
+  - `SERVER_B_URL=http://ubuntu.leopard-gila.ts.net:3002` (bisa diubah ke localhost jika testing)
+  - `WA_TARGET_PHONE=628xxxxxxxxxx` (nomor tujuan notifikasi WhatsApp)
+  - `MONITOR_API_KEY=monitor-secret-key-uts-2026`
 
 ---
 
@@ -53,54 +60,61 @@ Karena Baileys terikat pada siklus hidup proses Node.js, menempatkannya di dalam
 
 ## 5. Architectural Specification & Flow
 
-### A. Struktur Folder Baru: `server-monitor/`
+### A. Struktur Folder & Komponen Baru
 ```text
 UTS_Workshop/
 ├── server-a/
-│   └── routes/health.js         <-- Endpoint GET /health
+│   ├── routes/health.js         <-- Endpoint GET /health
+│   └── services/syncService.js  <-- Tambahan trigger POST /api/notify saat error atau data mutasi
 ├── server-b/
 │   └── routes/health.js         <-- Endpoint GET /health
 ├── server-monitor/              <-- Service Monitoring Baru
 │   ├── package.json
-│   ├── index.js                 <-- Express server + REST API /api/notify
+│   ├── index.js                 <-- Express server + REST API POST /api/notify
 │   ├── services/
-│   │   ├── whatsapp.js          <-- Baileys socket client, QR terminal auth
-│   │   └── monitor.js           <-- Polling loop (Server A & B) + State tracking
+│   │   ├── whatsapp.js          <-- Baileys socket client, QR terminal auth, queue sender
+│   │   └── monitor.js           <-- Polling loop (Server A & B) + Consecutive failure tracking
 │   └── auth_info_baileys/       <-- Directory session Baileys (gitignored)
 └── .env                         <-- Konfigurasi terpusat
 ```
 
-### B. Health Check Protocol
+### B. Health Check & State Machine Logic
 1. Server A dan Server B menambahkan endpoint:
-   `GET /health` -> `{ status: "ok", server: "server-a", timestamp: "..." }`
-2. `server-monitor` menjalankan polling setiap `MONITOR_INTERVAL_MS` (default 10000 ms / 10 detik).
-3. Target URL:
-   - Server A: `http://localhost:4000/health` (atau via port di `.env`)
-   - Server B: `SERVER_B_URL/health` (mendukung remote/Tailscale atau localhost)
-4. State Machine per Server:
-   - Status awal: `UNKNOWN`
-   - Jika response HTTP 200:
-     - Jika sebelumnya `DOWN`: Kirim pesan WhatsApp *"🟢 [RECOVERED] Server {NAME} telah kembali ONLINE pada {WAKTU}."*
-     - Set status `UP`.
-   - Jika response timeout (> 5000ms) / error koneksi (ECONNREFUSED):
-     - Jika sebelumnya `UP`: Kirim pesan WhatsApp *"🚨 [ALERT] Server {NAME} DOWN / TIDAK MERESPONS! (Error: {ERR}) pada {WAKTU}."*
-     - Set status `DOWN`.
+   `GET /health` -> `{ status: "ok", server: "server-a", timestamp: "...", uptime: 123 }`
+2. `server-monitor` menjalankan polling setiap `MONITOR_INTERVAL_MS` (10 detik) dengan timeout 5 detik.
+3. Tracking State:
+   - Tiap target memiliki state: `{ status: "UNKNOWN", consecutiveFails: 0 }`.
+   - **Kondisi Sukses (HTTP 200)**:
+     - Jika status sebelumnya `DOWN`: kirim alert WhatsApp:
+       `🟢 *[RECOVERED]* Server *{NAME}* telah kembali ONLINE pada {TIMESTAMP}.`
+     - Reset `consecutiveFails = 0`, set status `UP`.
+   - **Kondisi Gagal (Timeout / Connection Refused / 5xx)**:
+     - Tambahkan `consecutiveFails += 1`.
+     - Jika `consecutiveFails >= 2` dan status sebelumnya bukan `DOWN`:
+       - Kirim alert WhatsApp:
+         `🚨 *[ALERT]* Server *{NAME}* DOWN / TIDAK MERESPONS!`
+         `Detail: {ERROR_MSG}`
+         `Waktu: {TIMESTAMP}`
+       - Set status `DOWN`.
 
 ### C. WhatsApp Dispatcher (`services/whatsapp.js`)
 - Menggunakan `makeWASocket` dari `@whiskeysockets/baileys` dengan `useMultiFileAuthState`.
-- Menampilkan QR Code di terminal menggunakan `qrcode-terminal`.
-- Fungsi `sendAlert(message)`:
-  - Format nomor tujuan internasional (contoh: `6281234567890@s.whatsapp.net`).
-  - Mengantre pesan jika socket sedang *connecting/reconnecting*.
+- Render QR Code di terminal konsol menggunakan `qrcode-terminal` agar mudah di-scan via aplikasi WhatsApp hp.
+- Auto-reconnect jika koneksi socket drop (`DisconnectReason`).
+- Menangani pesan antrean jika ada notifikasi masuk saat socket sedang menghubungkan ulang.
 
 ### D. Notifikasi Event Tambahan (`POST /api/notify`)
-- `server-monitor` membuka endpoint HTTP:
-  `POST /api/notify` dengan payload: `{ topic: "sync", message: "Sinkronisasi berhasil 4 produk" }`
-- Server A (`syncService.js`) dapat memanggil endpoint ini secara asinkron setelah proses enkripsi dan push data ke Server B selesai, sehingga admin juga mendapatkan update status sinkronisasi di WhatsApp.
+- Server A (`syncService.js`) memanggil `POST http://127.0.0.1:3005/api/notify` dengan header `x-api-key`:
+  - Saat ada produk baru ditambahkan (mutation trigger):
+    `📦 *[DATA SYNC]* Berhasil sinkronisasi {COUNT} produk & {COUNT} kategori ke Server B.`
+  - Saat terjadi error koneksi ke Server B:
+    `⚠️ *[SYNC ERROR]* Gagal sinkronisasi data ke Server B: {ERROR_MSG}.`
+  - Periodic timer tanpa mutasi **tidak mengirim notifikasi** untuk menjaga reputasi nomor WhatsApp.
 
 ---
 
-## 6. What's Left to the Builder
-- Pemilihan versi persis paket Baileys (`@whiskeysockets/baileys`) dan logger `pino`.
-- Format styling teks pesan WhatsApp (menggunakan bold `*...*`, monospace ````...````, dan emoji alert yang jelas).
-- Penanganan reconnect Baileys otomatis (`DisconnectReason`).
+## 6. Engineering Decisions (Builder Calls)
+1. **Sync Notification Policy**: Dibatasi hanya pada error dan mutasi data (create/update produk). Polling 30 detik tanpa perubahan dibuat senyap untuk mencegah pemblokiran nomor WhatsApp oleh Meta.
+2. **Anti-Flapping Threshold**: 2 kegagalan berturut-turut (~20 detik) sebelum memicu pesan DOWN, mengakomodasi fluktuasi wajar jaringan Tailscale/WAN tanpa memicu *false alarm*.
+3. **Local Ingress**: Endpoint `POST /api/notify` mengikat pada `127.0.0.1` dan diproteksi dengan `x-api-key` dari `.env`, menjaga keamanan service agar tidak disalahgunakan sebagai open relay.
+4. **Boot Grace Period**: Pada 15 detik pertama sejak `server-monitor` dijalankan, status adalah `INITIALIZING` sehingga tidak langsung melempar alarm palsu jika server lain baru sedang proses booting.
