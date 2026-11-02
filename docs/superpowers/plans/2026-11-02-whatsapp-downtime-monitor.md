@@ -381,3 +381,4 @@ Tambahkan panduan menjalankan `server-monitor`, scan QR code terminal di awal, d
 git add package.json README.md tests/e2e-simulation.test.js
 git -c user.name="Lanvry" -c user.email="wardilanang46@gmail.com" commit --author="Lanvry <wardilanang46@gmail.com>" -m "docs: add whatsapp monitor usage guide and e2e verification"
 ```
+

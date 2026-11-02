@@ -57,3 +57,4 @@ function createApp(notifyHandler = null, apiKey = null) {
 }
 
 module.exports = { createApp };
+

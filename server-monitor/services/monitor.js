@@ -140,3 +140,4 @@ class Watchdog {
 }
 
 module.exports = { Watchdog };
+
